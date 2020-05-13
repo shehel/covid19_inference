@@ -38,10 +38,11 @@ from covid19_inference.plotting import *
 # The next thing we want to do is load a dataset from somewhere. For now there are two different sources i.e. the robert koch institute and the johns hopkins university. We will chose the rki for now!
 
 # %%
-jhu = cov19.data_retrieval.JHU()
+#jhu = cov19.data_retrieval.JHU()
 #It is important to download the dataset!
 #One could also parse true to the constructor of the class to force an auto download
-jhu.download_all_available_data(); 
+#jhu.download_all_available_data(); 
+
 
 # %% [markdown]
 # Wait for the download to finish. It will print a message!
@@ -64,15 +65,16 @@ jhu.download_all_available_data();
 # First set the variables and priors for the change points:
 
 # %%
-date_begin_data = datetime.datetime(2020,3,3)
-df = jhu.get_new_confirmed(country='Qatar', begin_date=date_begin_data)
-new_cases_obs = (df['confirmed'].values)
+df = pd.read_csv('moi.csv')
+df
 
 
 # %%
+new_cases_obs = (df['TOT'].values)
+date_begin_data = datetime.datetime(2020,3,7)
 diff_data_sim = 16 # should be significantly larger than the expected delay, in 
                    # order to always fit the same number of data points.
-num_days_forecast = 10
+num_days_forecast = 15
 
 prior_date_school_shutdown =  datetime.datetime(2020,3,10)
 prior_date_border_closure =  datetime.datetime(2020,3,18)
@@ -138,7 +140,7 @@ with cov19.Cov19Model(**params_model) as model:
 # ## MCMC sampling
 
 # %%
-trace = pm.sample(model=model, tune=500, draws=1000, init='advi+adapt_diag')
+trace = pm.sample(model=model, tune=500, draws=1000, init='advi+adapt_diag', cores=1)
 
 # %% [markdown]
 # ## Plotting
@@ -183,7 +185,7 @@ df_write = pd.DataFrame({'DT': x, 'TOT':np.append(new_cases_obs, [0]*num_days_fo
                          'TOT_model': np.median(trace.new_cases, axis=0)})
 df_write.TOT_model = df_write.TOT_model.astype(int)
 print (df_write)
-df_write.to_csv('../../model_output.csv', index=False);
+df_write.to_csv('model_output.csv', index=False);
 
 # In[51]:
 
@@ -200,14 +202,7 @@ fig, _ = plot_cases(
     colors=("tab:blue", "tab:orange"),
     country="Qatar",
 )
-fig.savefig("../../forecast_plot.png")
+fig.savefig("forecast_plot.png")
 
 
 # %%
-with open('trace_new_cases.pkl', 'wb') as handle:
-    pickle.dump(trace.new_cases, handle)
-with open('trace_lambda.pkl', 'wb') as handle:
-    pickle.dump(trace.new_cases, handle)
-with open('trace_mu.pkl', 'wb') as handle:
-    pickle.dump(trace.new_cases, handle)
-
