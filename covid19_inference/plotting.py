@@ -156,7 +156,7 @@ def plot_cases(
     fig, axes = plt.subplots(
         2,
         2,
-        figsize=(9, 5),
+        figsize=(36, 20),
         gridspec_kw={"height_ratios": [1, 3], "width_ratios": [2, 3]},
     )
 
@@ -260,8 +260,8 @@ def plot_cases(
     ax.set_ylabel(f"New confirmed cases in {country}")
     ax.legend(loc="upper left")
     ax.set_ylim(0, ylim)
-    func_format = lambda num, _: "${:.0f}\,$k".format(num / 1_000)
-    ax.yaxis.set_major_formatter(matplotlib.ticker.FuncFormatter(func_format))
+    #func_format = lambda num, _: "${:.0f}\,$k".format(num / 1_000)
+    #ax.yaxis.set_major_formatter(matplotlib.ticker.FuncFormatter(func_format))
     ax.set_xlim(start_date_mpl, end_date_mpl)
     ax.xaxis.set_major_locator(
         matplotlib.dates.WeekdayLocator(

@@ -767,7 +767,7 @@ def week_modulation(
     week_modulation_type="abs_sine",
     pr_mean_weekend_factor=0.3,
     pr_sigma_weekend_factor=0.5,
-    week_end_days=(6, 7),
+    week_end_days=(5, 6),
     model=None,
     save_in_trace=True,
 ):
