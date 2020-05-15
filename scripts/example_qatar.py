@@ -13,6 +13,8 @@ import sys
 import os 
 import pickle
 
+import urllib
+
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -63,12 +65,22 @@ jhu.download_all_available_data();
 # 
 # First set the variables and priors for the change points:
 
-# %%
+# In[91]
 date_begin_data = datetime.datetime(2020,3,3)
-df = jhu.get_new_confirmed(country='Qatar', begin_date=date_begin_data)
-new_cases_obs = (df['confirmed'].values)
 
+# %%
+#df = jhu.get_new_confirmed(country='Qatar', begin_date=date_begin_data)
+#new_cases_obs = (df['confirmed'].values)
 
+# In[81]
+#df
+
+# In[99]
+
+date_begin_data = datetime.datetime(2020,3,3)
+df = pd.read_csv('../../covid19MLPredictor/data/covid_data.csv')
+new_cases_obs = df['Number of New Positive Cases in Last 24 Hrs'].values
+df
 # %%
 diff_data_sim = 16 # should be significantly larger than the expected delay, in 
                    # order to always fit the same number of data points.
@@ -122,7 +134,7 @@ with cov19.Cov19Model(**params_model) as model:
     prior_I = cov19.make_prior_I(lambda_t_log, mu, pr_median_delay = pr_median_delay)
     
     # Use lambda_t_log and mu to run the SIR model
-    new_I_t = cov19.SIR(lambda_t_log, mu, pr_I_begin = prior_I)
+    new_I_t = cov19.SIR(lambda_t_log,mu, pr_I_begin = prior_I)
     
     # Delay the cases by a lognormal reporting delay
     new_cases_inferred_raw = cov19.delay_cases(new_I_t, pr_median_delay=pr_median_delay, 
@@ -183,7 +195,7 @@ df_write = pd.DataFrame({'DT': x, 'TOT':np.append(new_cases_obs, [0]*num_days_fo
                          'TOT_model': np.median(trace.new_cases, axis=0)})
 df_write.TOT_model = df_write.TOT_model.astype(int)
 print (df_write)
-df_write.to_csv('../../model_output.csv', index=False);
+df_write.to_csv('../../covid19MLPredictor/data/model_output.csv', index=False);
 
 # In[51]:
 
@@ -195,19 +207,22 @@ fig, _ = plot_cases(
     diff_data_sim=16,
     start_date_plot=None,
     end_date_plot=None,
-    ylim=2000,
+    ylim=3000,
     week_interval=2,
     colors=("tab:blue", "tab:orange"),
     country="Qatar",
 )
-fig.savefig("../../forecast_plot.png")
+fig.savefig("forecastplot.png")
 
 
 # %%
-with open('trace_new_cases.pkl', 'wb') as handle:
+with open('../../covid19MLPredictor/data/trace_new_cases.pkl', 'wb') as handle:
     pickle.dump(trace.new_cases, handle)
-with open('trace_lambda.pkl', 'wb') as handle:
-    pickle.dump(trace.new_cases, handle)
-with open('trace_mu.pkl', 'wb') as handle:
-    pickle.dump(trace.new_cases, handle)
+with open('../../covid19MLPredictor/data/trace_lambda.pkl', 'wb') as handle:
+    pickle.dump(trace.lambda_t, handle)
+with open('../../covid19MLPredictor/data/trace_mu.pkl', 'wb') as handle:
+    pickle.dump(trace.mu, handle)
 
+
+
+# %%

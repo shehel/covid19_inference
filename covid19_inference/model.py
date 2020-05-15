@@ -243,7 +243,7 @@ def modelcontext(model):
 def student_t_likelihood(
     new_cases_inferred,
     pr_beta_sigma_obs=30,
-    nu=4,
+    nu=10,
     offset_sigma=1,
     model=None,
     data_obs=None,

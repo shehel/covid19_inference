@@ -12,6 +12,7 @@ from .model import (
     Cov19Model,
     lambda_t_with_sigmoids,
     SIR,
+    SEIR,
     delay_cases,
     week_modulation,
     student_t_likelihood,
