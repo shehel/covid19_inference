@@ -34,49 +34,26 @@ except ModuleNotFoundError:
     import covid19_inference as cov19
 
 from covid19_inference.plotting import *
+
 # %% [markdown]
 # ## Data retrieval
 # 
 # The next thing we want to do is load a dataset from somewhere. For now there are two different sources i.e. the robert koch institute and the johns hopkins university. We will chose the rki for now!
 
-# %%
-jhu = cov19.data_retrieval.JHU()
-#It is important to download the dataset!
-#One could also parse true to the constructor of the class to force an auto download
-jhu.download_all_available_data(); 
-
-# %% [markdown]
-# Wait for the download to finish. It will print a message!
-# 
-# We can now access this downloaded data by the attribute
-# ```
-# rki.data
-# ```
-# but normaly one would use the build in filter methods.
-# For example one could use
-# ```
-# rki.get_confirmed()
-# rki.get_deaths()
-# rki.get_recovered()
-# ```
-# to get different cases. One could also filter the output, possible args are: bundesland, landkreis, begin_date, end_date, date_type.
-# 
-# ## Create the model
-# 
-# First set the variables and priors for the change points:
-
 # In[91]
 date_begin_data = datetime.datetime(2020,3,3)
 
 # %%
+#jhu = cov19.data_retrieval.JHU()
+#It is important to download the dataset!
+#One could also parse true to the constructor of the class to force an auto download
+#jhu.download_all_available_data(); 
+
+# (Old) JHU as source of data
 #df = jhu.get_new_confirmed(country='Qatar', begin_date=date_begin_data)
 #new_cases_obs = (df['confirmed'].values)
 
-# In[81]
-#df
-
 # In[99]
-
 date_begin_data = datetime.datetime(2020,3,3)
 df = pd.read_csv('../../covid19MLPredictor/data/covid_data.csv')
 new_cases_obs = df['Number of New Positive Cases in Last 24 Hrs'].values
@@ -91,6 +68,7 @@ prior_date_border_closure =  datetime.datetime(2020,3,18)
 prior_ramadan =  datetime.datetime(2020,4,23)
 prior_date_mask_compulsory =  datetime.datetime(2020,4,26)
 
+# List of change points
 change_points = [dict(pr_mean_date_transient = prior_date_school_shutdown,
                       pr_sigma_date_transient = 6,
                       pr_median_lambda = 0.2,
@@ -126,6 +104,9 @@ with cov19.Cov19Model(**params_model) as model:
     
     # set prior distribution for the recovery rate
     mu = pm.Lognormal(name="mu", mu=np.log(1/8), sigma=0.2)
+
+    # set prior distribution for the probability of testing of infectious cases
+    prob_test = pm.Lognormal(name="prob_test", mu=np.log(0.45), sigma=0.2)
     pr_median_delay = 10
     
     # This builds a decorrelated prior for I_begin for faster inference. 
@@ -134,7 +115,7 @@ with cov19.Cov19Model(**params_model) as model:
     prior_I = cov19.make_prior_I(lambda_t_log, mu, pr_median_delay = pr_median_delay)
     
     # Use lambda_t_log and mu to run the SIR model
-    new_I_t = cov19.SIR(lambda_t_log,mu, pr_I_begin = prior_I)
+    new_I_t = cov19.SIR(lambda_t_log,mu, prob_test = prob_test, pr_I_begin = prior_I)
     
     # Delay the cases by a lognormal reporting delay
     new_cases_inferred_raw = cov19.delay_cases(new_I_t, pr_median_delay=pr_median_delay, 
@@ -151,12 +132,6 @@ with cov19.Cov19Model(**params_model) as model:
 
 # %%
 trace = pm.sample(model=model, tune=500, draws=1000, init='advi+adapt_diag')
-
-# %% [markdown]
-# ## Plotting
-# 
-# Plotting tools are rudimentary right now. But one can always write custom plotting function 
-# by accessing the samples stored in the trace.
 
 # %%
 varnames = cov19.plotting.get_all_free_RVs_names(model)
@@ -187,14 +162,19 @@ fig.subplots_adjust(wspace=0.25, hspace=0.4)
 # begin date of simulations which is set to 16 days before 
 # first observation by default
 sim_begin_data = date_begin_data - datetime.timedelta(days=diff_data_sim)
+
+# end date including the forecasted dates
 date_end_data = date_begin_data + datetime.timedelta(days=len(new_cases_obs)+num_days_forecast-1)
 
 x = pd.date_range(date_begin_data,date_end_data)
 
+# write forecasts to csv
 df_write = pd.DataFrame({'DT': x, 'TOT':np.append(new_cases_obs, [0]*num_days_forecast),
                          'TOT_model': np.median(trace.new_cases, axis=0)})
 df_write.TOT_model = df_write.TOT_model.astype(int)
 print (df_write)
+
+# write to heroku site repo for ingestion into the app
 df_write.to_csv('../../covid19MLPredictor/data/model_output.csv', index=False);
 
 # In[51]:
@@ -216,6 +196,8 @@ fig.savefig("forecastplot.png")
 
 
 # %%
+
+# Write to heroku site repo for ingestion into the app for plotting
 with open('../../covid19MLPredictor/data/trace_new_cases.pkl', 'wb') as handle:
     pickle.dump(trace.new_cases, handle)
 with open('../../covid19MLPredictor/data/trace_lambda.pkl', 'wb') as handle:

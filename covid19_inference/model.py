@@ -353,6 +353,9 @@ def SIR(
         mu : :class:`~theano.tensor.TensorVariable`
             the recovery rate :math:`\mu`, typically a random variable. Can be 0 or 1-dimensional. If 1-dimensional,
             the dimension are the different regions.
+        
+        prob_test: :class: `~theano.tensor.TensorVariable`
+            A random variable for capturing the probability of testing infectious cases.
 
         pr_I_begin : float or array_like or :class:`~theano.tensor.TensorVariable`
             Prior beta of the Half-Cauchy distribution of :math:`I(0)`.
@@ -380,6 +383,8 @@ def SIR(
             time series of the infected (if return_all set to True)
         S_t : :class:`~theano.tensor.TensorVariable`
             time series of the susceptible (if return_all set to True)
+        new_T_t : :class: `~theano.tensor.TensorVariable`
+            times series of the daily newly tested and confirmed positive persons. 
 
     """
     model = modelcontext(model)
@@ -401,28 +406,28 @@ def SIR(
     lambda_t = tt.exp(lambda_t_log)
     new_I_0 = tt.zeros_like(I_begin)
     new_T_0 = tt.zeros_like(I_begin)
-    new_r_0 = tt.zeros_like(I_begin)
+    new_R_0 = tt.zeros_like(I_begin)
+
     # Runs SIR model:
-    def next_day(lambda_t, S_t, I_t, T_t, _0, _1, mu, N, prob_test):
+    def next_day(lambda_t, S_t, I_t, _0, _1, _2, mu, N, prob_test):
         new_I_t = lambda_t / N * I_t * S_t
         S_t = S_t - new_I_t
-        new_T_r = mu * I_t
-        I_t = I_t + new_I_t - new_T_r
-        T_t = prob_test * new_T_r
-        T_t = tt.clip(T_t, -1, N)
+        new_R_t = mu * I_t
+        I_t = I_t + new_I_t - new_R_t
+        new_T_t = prob_test * new_R_t
         I_t = tt.clip(I_t, -1, N)  # for stability
         S_t = tt.clip(S_t, 0, N)
-        return S_t, I_t, T_t, new_I_t, new_T_r
+        return S_t, I_t, new_I_t, new_R_t, new_T_t
 
     # theano scan returns two tuples, first one containing a time series of
     # what we give in outputs_info : S, I, new_I
     outputs, _ = theano.scan(
         fn=next_day,
         sequences=[lambda_t],
-        outputs_info=[S_begin, I_begin, new_T_0, new_I_0, new_r_0],
+        outputs_info=[S_begin, I_begin, new_I_0, new_R_0, new_T_0],
         non_sequences=[mu, N, prob_test],
     )
-    S_t, I_t, T_t, new_I_t, new_T_r = outputs
+    S_t, I_t, new_I_t, new_R_t, new_T_t = outputs
     pm.Deterministic("new_I_t", new_I_t)
     if save_all:
         pm.Deterministic("S_t", S_t)
@@ -431,7 +436,7 @@ def SIR(
     if return_all:
         return new_I_t, I_t, S_t
     else:
-        return new_T_r
+        return new_T_t
 
 
 def SEIR(
