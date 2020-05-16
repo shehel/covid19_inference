@@ -1,10 +1,14 @@
 # Bayesian inference and forecast of COVID-19, code repository
 
 ## Model for Qatar
-Please see [here](scripts/example_qatar.py) for the code used to create the model and generate the plot used in [covid19-qatar.herokuapp.com](covid19-qatar.herokuapp.com). This repo's outputs are set for feeding into the [web app](https://github.com/A1337CBS/covid19MLPredictor). Input csv file can be obtained by running 
+See [here](scripts/example_qatar.py) for the code used to create the model and generate the plot used in [covid19-qatar.herokuapp.com](covid19-qatar.herokuapp.com). This repo's outputs are set for feeding into the [web app](https://github.com/A1337CBS/covid19MLPredictor). Input csv file can be obtained by running 
+ ```   
     python pages/covid_parser.py
+```
 inside the web app directory. Run 
+```    
     python scripts/example_qatar.py 
+```
 for the plots and forecasts.
 
 
