@@ -329,7 +329,7 @@ def student_t_likelihood(
 
 
 def SIR(
-    lambda_t_log, mu, pr_I_begin=100, model=None, return_all=False, save_all=False,
+    lambda_t_log, mu, prob_test, pr_I_begin=100, model=None, return_all=False, save_all=False,
 ):
     r"""
         Implements the susceptible-infected-recovered model.
@@ -400,25 +400,29 @@ def SIR(
 
     lambda_t = tt.exp(lambda_t_log)
     new_I_0 = tt.zeros_like(I_begin)
-
+    new_T_0 = tt.zeros_like(I_begin)
+    new_r_0 = tt.zeros_like(I_begin)
     # Runs SIR model:
-    def next_day(lambda_t, S_t, I_t, _, mu, N):
+    def next_day(lambda_t, S_t, I_t, T_t, _0, _1, mu, N, prob_test):
         new_I_t = lambda_t / N * I_t * S_t
         S_t = S_t - new_I_t
-        I_t = I_t + new_I_t - mu * I_t
+        new_T_r = mu * I_t
+        I_t = I_t + new_I_t - new_T_r
+        T_t = prob_test * new_T_r
+        T_t = tt.clip(T_t, -1, N)
         I_t = tt.clip(I_t, -1, N)  # for stability
         S_t = tt.clip(S_t, 0, N)
-        return S_t, I_t, new_I_t
+        return S_t, I_t, T_t, new_I_t, new_T_r
 
     # theano scan returns two tuples, first one containing a time series of
     # what we give in outputs_info : S, I, new_I
     outputs, _ = theano.scan(
         fn=next_day,
         sequences=[lambda_t],
-        outputs_info=[S_begin, I_begin, new_I_0],
-        non_sequences=[mu, N],
+        outputs_info=[S_begin, I_begin, new_T_0, new_I_0, new_r_0],
+        non_sequences=[mu, N, prob_test],
     )
-    S_t, I_t, new_I_t = outputs
+    S_t, I_t, T_t, new_I_t, new_T_r = outputs
     pm.Deterministic("new_I_t", new_I_t)
     if save_all:
         pm.Deterministic("S_t", S_t)
@@ -427,7 +431,7 @@ def SIR(
     if return_all:
         return new_I_t, I_t, S_t
     else:
-        return new_I_t
+        return new_T_r
 
 
 def SEIR(
