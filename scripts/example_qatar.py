@@ -57,7 +57,7 @@ date_begin_data = datetime.datetime(2020,3,3)
 date_begin_data = datetime.datetime(2020,3,3)
 df = pd.read_csv('../../covid19MLPredictor/data/covid_data.csv')
 new_cases_obs = df['Number of New Positive Cases in Last 24 Hrs'].values
-df
+print (df)
 # %%
 diff_data_sim = 16 # should be significantly larger than the expected delay, in 
                    # order to always fit the same number of data points.
@@ -66,7 +66,8 @@ num_days_forecast = 10
 prior_date_school_shutdown =  datetime.datetime(2020,3,10)
 prior_date_border_closure =  datetime.datetime(2020,3,18)
 prior_ramadan =  datetime.datetime(2020,4,23)
-prior_date_mask_compulsory =  datetime.datetime(2020,4,26)
+prior_date_mask_shopping =  datetime.datetime(2020,4,26)
+prior_data_mask_compulsory = datetime.datetime(2020,5,17)
 
 # List of change points
 change_points = [dict(pr_mean_date_transient = prior_date_school_shutdown,
@@ -81,9 +82,13 @@ change_points = [dict(pr_mean_date_transient = prior_date_school_shutdown,
                       pr_sigma_date_transient = 6,
                       pr_median_lambda = 1/4,
                       pr_sigma_lambda=1),
-                 dict(pr_mean_date_transient = prior_date_mask_compulsory,
+                 dict(pr_mean_date_transient = prior_date_mask_shopping,
                       pr_sigma_date_transient = 10,
                       pr_median_lambda = 1/8/2,
+                      pr_sigma_lambda = 1),
+                 dict(pr_mean_date_transient = prior_data_mask_compulsory,
+                      pr_sigma_date_transient = 4,
+                      pr_median_lambda = 1/8/4,
                       pr_sigma_lambda = 1)]
 
 # %% [markdown]
@@ -115,7 +120,7 @@ with cov19.Cov19Model(**params_model) as model:
     prior_I = cov19.make_prior_I(lambda_t_log, mu, pr_median_delay = pr_median_delay)
     
     # Use lambda_t_log and mu to run the SIR model
-    new_I_t = cov19.SIR(lambda_t_log,mu, prob_test = prob_test, pr_I_begin = prior_I)
+    new_I_t = cov19.SIR(lambda_t_log,mu, pr_I_begin = prior_I, prob_test = prob_test)
     
     # Delay the cases by a lognormal reporting delay
     new_cases_inferred_raw = cov19.delay_cases(new_I_t, pr_median_delay=pr_median_delay, 
@@ -129,9 +134,9 @@ with cov19.Cov19Model(**params_model) as model:
 
 # %% [markdown]
 # ## MCMC sampling
-
+start = pm.find_MAP(model=model)
 # %%
-trace = pm.sample(model=model, tune=500, draws=1000, init='advi+adapt_diag')
+trace = pm.sample(model=model, tune=500, draws=1000, init='advi+adapt_diag', start=start)
 
 # %%
 varnames = cov19.plotting.get_all_free_RVs_names(model)
@@ -177,6 +182,7 @@ print (df_write)
 # write to heroku site repo for ingestion into the app
 df_write.to_csv('../../covid19MLPredictor/data/model_output.csv', index=False);
 
+df_write.to_csv('model_output.csv', index=False);
 # In[51]:
 
 # Draw plots
