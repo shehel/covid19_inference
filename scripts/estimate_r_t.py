@@ -110,7 +110,7 @@ def get_posteriors(sr, sigma=0.15):
     return posteriors, log_likelihood
 
 #date_begin_data = datetime.datetime(2020,8,3)
-df2 = pd.read_csv('../covid19MLPredictor/data/covid_data.csv')
+df2 = pd.read_csv('../../covid19MLPredictor/data/covid_data.csv')
 df = df2.iloc[:, 2] 
 
 original, smoothed = prepare_cases(df)
