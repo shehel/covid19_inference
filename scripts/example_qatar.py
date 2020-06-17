@@ -68,7 +68,7 @@ prior_date_border_closure =  datetime.datetime(2020,3,18)
 prior_ramadan =  datetime.datetime(2020,4,23)
 prior_date_mask_shopping =  datetime.datetime(2020,4,26)
 prior_date_mask_compulsory = datetime.datetime(2020,5,17)
-prior_date_eid_measures = datetime.datetime(2020,5,21)
+#prior_date_eid_measures = datetime.datetime(2020,5,21)
 # List of change points
 change_points = [dict(pr_mean_date_transient = prior_date_school_shutdown,
                       pr_sigma_date_transient = 6,
@@ -89,11 +89,11 @@ change_points = [dict(pr_mean_date_transient = prior_date_school_shutdown,
                  dict(pr_mean_date_transient = prior_date_mask_compulsory,
                       pr_sigma_date_transient = 10,
                       pr_median_lambda = 1/8/4,
-                      pr_sigma_lambda = 1),
-                 dict(pr_mean_date_transient = prior_date_eid_measures,
-                      pr_sigma_date_transient = 6,
-                      pr_median_lambda = 1/8,
                       pr_sigma_lambda = 1)]
+                 # dict(pr_mean_date_transient = prior_date_eid_measures,
+                 #      pr_sigma_date_transient = 6,
+                 #      pr_median_lambda = 1/8,
+                 #      pr_sigma_lambda = 1)]
 
 # %% [markdown]
 # Then, create the model:

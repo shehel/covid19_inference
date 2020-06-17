@@ -2,7 +2,7 @@ echo "Starting..."
 cd ../covid19MLPredictor
 eval "$(conda shell.bash hook)"
 conda activate covid19
-python pages/covid_parser.py
+#python pages/covid_parser.py
 cd ../covid19_inference/scripts
 python estimate_r_t.py
 echo "Pushing new entries"
