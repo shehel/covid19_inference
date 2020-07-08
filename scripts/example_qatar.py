@@ -55,7 +55,7 @@ date_begin_data = datetime.datetime(2020,3,3)
 
 # In[99]
 date_begin_data = datetime.datetime(2020,3,3)
-df = pd.read_csv('../../covid19MLPredictor/data/covid_data.csv')
+df = pd.read_csv('../../covid19MLPredictor/data/covid_data_.csv')
 new_cases_obs = df['Number of New Positive Cases in Last 24 Hrs'].values
 print (df)
 # %%
