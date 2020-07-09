@@ -1,4 +1,3 @@
-echo "Starting..."
 cd ../covid19MLPredictor
 eval "$(conda shell.bash hook)"
 conda activate covid19
